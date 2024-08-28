@@ -5,6 +5,7 @@ using PluginAPI.Core.Attributes;
 using PluginAPI.Enums;
 using PluginAPI.Events;
 using System;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -79,7 +80,7 @@ namespace TheRiptide
 
                 new Task(async () =>
                 {
-                    string name = JsonConvert.SerializeObject(PlayerList.Title.Value);
+                    string name = JsonConvert.SerializeObject(ServerName());
                     string content = JsonConvert.SerializeObject($"Potential DDoS detected\nPacket Count: {count}\nTotal Size: {BytesToString(size)}");
                     string str = $@"
 {{
@@ -109,6 +110,44 @@ namespace TheRiptide
             int place = Convert.ToInt32(Math.Floor(Math.Log(bytes, 1024)));
             double num = Math.Round(bytes / Math.Pow(1024, place), 1);
             return (Math.Sign(byteCount) * num).ToString() + suf[place];
+        }
+
+        private static string ServerName()
+        {
+            string server_name = StripTagsCharArray(GameCore.ConfigFile.ServerConfig.GetString("server_name", "My Server Name").Split('\n').First()).Replace("Discord", "");
+            if (string.IsNullOrEmpty(server_name))
+                server_name = "Server name Empty";
+
+            return server_name;
+        }
+
+        public static string StripTagsCharArray(string source)
+        {
+            char[] array = new char[source.Length];
+            int arrayIndex = 0;
+            bool inside = false;
+            for (int i = 0; i < source.Length; i++)
+            {
+                char let = source[i];
+                if (let == '<')
+                {
+                    inside = true;
+                    continue;
+                }
+
+                if (let == '>')
+                {
+                    inside = false;
+                    continue;
+                }
+
+                if (!inside)
+                {
+                    array[arrayIndex] = let;
+                    arrayIndex++;
+                }
+            }
+            return new string(array, 0, arrayIndex);
         }
     }
 }
